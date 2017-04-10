@@ -80,4 +80,50 @@ class YelpClient: BDBOAuth1RequestOperationManager {
                             completion(nil, error)
                         })!
     }
+    
+    func searchWithTerm(filters: [String:AnyObject],_ term: String, completion: @escaping ([Business]?, Error?) -> Void) -> AFHTTPRequestOperation {
+        // For additional parameters, see http://www.yelp.com/developers/documentation/v2/search_api
+        
+        // Default the location to San Francisco
+        var parameters: [String : AnyObject] = ["term": term as AnyObject, "ll": "37.785771,-122.406165" as AnyObject]
+        
+        
+        if filters["sort"] != nil {
+            parameters["sort"] = filters["sort"] as AnyObject?
+        }
+        
+        if filters["category_filter"] != nil {
+            let categories = filters["category_filter"] as! [String]
+            parameters["category_filter"] = categories.joined(separator: ",") as AnyObject
+        }
+        
+        if filters["deals_filter"] != nil {
+            parameters["deals_filter"] =  filters["deals_filter"] as AnyObject?
+        }
+        
+        if filters["radius_filter"] != nil {
+            parameters["radius_filter"] = filters["radius_filter"] as AnyObject?
+        }
+        
+        if filters["offset"] != nil{
+            parameters["offset"] = filters["offset"] as AnyObject?
+        }
+        
+        parameters["limit"] = 10 as AnyObject
+        
+        print(parameters)
+        
+        return self.get("search", parameters: parameters,
+                        success: { (operation: AFHTTPRequestOperation, response: Any) -> Void in
+                            if let response = response as? [String: Any]{
+                                let dictionaries = response["businesses"] as? [NSDictionary]
+                                if dictionaries != nil {
+                                    completion(Business.businesses(array: dictionaries!), nil)
+                                }
+                            }
+        },
+                        failure: { (operation: AFHTTPRequestOperation?, error: Error) -> Void in
+                            completion(nil, error)
+        })!
+    }
 }
